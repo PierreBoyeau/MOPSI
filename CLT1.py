@@ -10,7 +10,6 @@ rare or frequent words.
 Please modify the word length"""
 
 
-dna_sequence = ''
 E = ['A', 'T', 'C', 'G']
 DICT_E = {
     'A': 0,
@@ -76,20 +75,27 @@ class Occurrences1(Occurrences):
                 lengths_already_processed.append(word_length)
 
     def get_zn_method1(self):
-        """Has to be tested and optimized if necessary"""
+        """Has to be tested and optimized if necessary
+        function provoked error when a word has no occurrence.
+        solution found : test whether first_estimator is equal to 0 (it's an it, thus valid comparison"""
         for word_tuple in itertools.product(E, repeat=self.length):
             word = ''.join(word_tuple)
             size, key = get_key(word)
             first_estimator = self[word]
             second_estimator = self[word[:-1]]*self[word[-2]+word[-1]]/self[word[-2]]
-            zeta = (1/math.sqrt(self.sequence_length))*(first_estimator - second_estimator)
-            sigma = math.sqrt(first_estimator/self.sequence_length
-                              * (1 - (self[word[:-1]]/self[word[-2]]))
-                              * (1 - (second_estimator/self.sequence_length))
-                              )
-            self.zn[key] = zeta / sigma
+            if first_estimator != 0:
+                zeta = (1/math.sqrt(self.sequence_length))*(first_estimator - second_estimator)
+                sigma = math.sqrt(first_estimator/self.sequence_length
+                                  * (1 - (self[word[:-1]]/self[word[-2]]))
+                                  * (1 - (second_estimator/self.sequence_length))
+                                  )
+                self.zn[key] = zeta / sigma
+            else:
+                self.zn[key] = 0
 
     def get_proba_method1(self):
+        """Error may come from the fact that when must check wheter word has occurence ?
+        + maybe approximation error"""
         cdf = scipy.stats.norm.cdf
         for i in range(4 ** self.length):
             self.pn[i] = 1 - cdf(self.zn[i])
@@ -97,17 +103,36 @@ class Occurrences1(Occurrences):
 
 
 
-sequence = ""
-i = 0
-with open("E_coli.txt") as f:
-    for line in f:
-        if i<100:
-            sequence += line.replace("\n", "")
-            i += 1
+# sequence = ""
+# i = 0
+# with open("E_coli.txt") as f:
+#     for line in f:
+#         if i<100:
+#             sequence += line.replace("\n", "")
+#             i += 1
 
+sequence = "AAATCTGCCGCTGATGCCAGGCTTAACGCAACTGGTGCTCAAGCTGGAAACGCTGGGCTGGAAAGTGGCGA" \
+           "TTGCCTCCGGCGGCTTTACTTTCTTTGCTGAATACCTGCGCGACAAGCTGCGCCTGACCGCCGTGGTAGCC" \
+           "AATGAACTGGAGATCATGGACGGTAAATTTACCGGCAATGTGATCGGCGACATCGTAGACGCGCAGTACAA" \
+           "AGCGAAAACTCTGACTCGCCTCGCGCAGGAGTATGAAATCCCGCTGGCGCAGACCGTGGCGATTGGCGATG" \
+           "GAGCCAATGACCTGCCGATGATCAAAGCGGCAGGGCTGGGGATTGCCTACCATGCCAAGCCAAAAGTGAAT" \
+           "GAAAAGGCGGAAGTCACCATCCGTCACGCTGACCTGATGGGGGTATTCTGCATCCTCTCAGGCAGCCTGA" \
+           "ATCAGAAGTAATTGCTCGCCCGCCATCCTGCGGGCGGCACAGCATTAACGAGGTACACCGTGGCAAAAGCT" \
+           "CCAAAACGCGCCTTTGTTTGTAATGAATGCGGGGCCGATTATCCGCGCTGGCAGGGGC" \
+           "GTGCAGTGCCTGTCATGCCTGGAACACCATCACCGAGGTGCGTCTTGCTGCGTCGCCA" \
+           "ATGGTGGCGCGTAACGAGCGTCTCAGCGGCTATGCCGGTAGCGCCGGGGTGGCAAA" \
+           "AGTCCAGAAACTCTCCGATATCAGCCTTGAAGAGCTGCCGCGTTTTTCCA" \
+           "CCGGATTTAAAGAGTTCGACCGCGTACTAGGAACGCTGTGCAAACTGGCCCAGCA" \
+           "GATGAAAACGCTGTATGTCACCGGCGAAGAGTCGCTGCAACAGGTGGCAATGCGCGCTCATCGCCTTGGC" \
+           "CTGCCGACTGACAATCTCAATATGTTGTCGGAAACCAGCATCGAACAGATCTGCCTGATTGCCGAAGAAGAGCAACCG" \
+           "AAGCTGATGGTAATTGACTCGATCCAGGTGATGCATATGGCGGATGTACAGTCATCGCCTGG" \
+           "TAGCGTGGCGCAGGTGCGTGAAACGGCGGCTTATTTGACACGCTTCGCCAAAACGCGCGGTGTGGC"
+C = Occurrences1(3, sequence)
+print(sum(C.pn))
 A = Occurrences1(4, sequence)
-histo = plt.hist(A.zn)
-plt.show()
+print(sum(A.pn))
+B = Occurrences1(5, sequence)
+print(sum(B.pn))
 
 
 
