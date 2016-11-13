@@ -1,5 +1,6 @@
 import math
-
+import itertools
+import numpy as np
 
 """This program allows to compute the p-value
 of different words in a NDA sequence in order to determine abnormally
@@ -25,14 +26,21 @@ def get_key(str):
         power *= 4
     return size, key
 
+
 class Occurrences:
     def __init__(self, length):
+        """
+        length : length of words we want to study
+        table : list of occurences of all words than have sizes from 1 to length.
+            For instance, self.table[1] returns the occurrences of words of size 2.
+        sequence_length : length of studied sequence
+        """
         assert (length >= 3)
         self.length = length
         self.sequence_length = 0
         self.table = []
         number_of_words = 4
-        for iter in range(length):
+        for iterable in range(length):
             self.table.append([0]*number_of_words)
             number_of_words *= 4
 
@@ -56,20 +64,39 @@ class Occurrences:
                     print(observed_word)
                 lengths_already_processed.append(word_length)
 
-    def get_zetan(self):
-        zetan = [0]*(pow(4, self.length))
-        for word in :
+    def get_zetan_obs(self):
+        """Has to be tested and optimized if necessary"""
+        zetan = np.empty(4 ** self.length)
+        for word_tuple in itertools.product(E, repeat=self.length):
+            word = ''.join(word_tuple)
             size, key = get_key(word)
             first_estimator = self[word]
             second_estimator = self[word[:-1]]*self[word[-2]+word[-1]]/self[word[-2]]
             zetan[key] = 1/math.sqrt(self.sequence_length)*(first_estimator - second_estimator)
+        return zetan
+
+    def get_zn_obs(self):
+        """Has to be tested and optimized if necessary"""
+        zn = np.empty(4 ** self.length)
+        for word_tuple in itertools.product(E, repeat=self.length):
+            word = ''.join(word_tuple)
+            size, key = get_key(word)
+            first_estimator = self[word]
+            second_estimator = self[word[:-1]]*self[word[-2]+word[-1]]/self[word[-2]]
+            zeta = 1/math.sqrt(self.sequence_length)*(first_estimator - second_estimator)
+            sigma = math.sqrt(first_estimator/self.sequence_length
+                              * (1 - (self[word[:-1]]/self[word[-2]]))
+                              * (1 - (second_estimator/self.sequence_length))
+                              )
+            zn[key] = zeta / sigma
+        return zn
 
 
 # Step 1 : create table of words occurrences for length in range(1,h+1)
 
 
-# A = Occurrences(2)
-# A.build_occurrences_method1('ATCGATCGATCG')
-# print(A.table[0])
-# print(A.table[1])
-# print(A["GA"])
+A = Occurrences(3)
+A.build_occurrences_method1('ATCGATCGATCG')
+print(A.table[0])
+print(A.table[1])
+print(A["GA"])
