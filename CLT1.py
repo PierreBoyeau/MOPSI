@@ -27,6 +27,13 @@ def get_key(str):
         power *= 4
     return size, key
 
+def random_sequence(N):
+    sequence = ""
+    i = 0
+    while i<N:
+        sequence += E[np.random.randint(4)]
+        i += 1
+    return sequence
 
 class Occurrences:
     def __init__(self, length):
@@ -77,19 +84,22 @@ class Occurrences1(Occurrences):
     def get_zn_method1(self):
         """Has to be tested and optimized if necessary
         function provoked error when a word has no occurrence.
-        solution found : test whether first_estimator is equal to 0 (it's an it, thus valid comparison"""
+        solution found : test whether first_estimator is equal to 0 (it's an it, thus valid comparison)"""
         for word_tuple in itertools.product(E, repeat=self.length):
             word = ''.join(word_tuple)
             size, key = get_key(word)
             first_estimator = self[word]
-            second_estimator = self[word[:-1]]*self[word[-2]+word[-1]]/self[word[-2]]
+            second_estimator = np.true_divide(self[word[:-1]]*self[word[-2]+word[-1]], self[word[-2]])
             if first_estimator != 0:
-                zeta = (1/math.sqrt(self.sequence_length))*(first_estimator - second_estimator)
-                sigma = math.sqrt(first_estimator/self.sequence_length
+                zeta = (first_estimator - second_estimator)/math.sqrt(self.sequence_length)
+                sigma = math.sqrt(np.true_divide(first_estimator, self.sequence_length)
                                   * (1 - (self[word[:-1]]/self[word[-2]]))
                                   * (1 - (second_estimator/self.sequence_length))
                                   )
-                self.zn[key] = zeta / sigma
+                print(sigma)
+                self.zn[key] = np.true_divide(zeta, sigma)
+
+
             else:
                 self.zn[key] = 0
 
@@ -98,41 +108,44 @@ class Occurrences1(Occurrences):
         + maybe approximation error"""
         cdf = scipy.stats.norm.cdf
         for i in range(4 ** self.length):
-            self.pn[i] = 1 - cdf(self.zn[i])
+            if self.zn[i] != 0:
+                self.pn[i] = 1 - cdf(self.zn[i])
+            else:
+                self.pn[i] = 0
+
+
+sequence = random_sequence(7000)
+a = Occurrences1(5, sequence)
+# plt.hist(a.zn)
+# plt.show()
+
+"""Probleme au niveau de la norme de Zn, probleme de normalisation quelque part.
+Vraisembablement sigma"""
 
 
 
-
-# sequence = ""
-# i = 0
-# with open("E_coli.txt") as f:
-#     for line in f:
-#         if i<100:
-#             sequence += line.replace("\n", "")
-#             i += 1
-
-sequence = "AAATCTGCCGCTGATGCCAGGCTTAACGCAACTGGTGCTCAAGCTGGAAACGCTGGGCTGGAAAGTGGCGA" \
-           "TTGCCTCCGGCGGCTTTACTTTCTTTGCTGAATACCTGCGCGACAAGCTGCGCCTGACCGCCGTGGTAGCC" \
-           "AATGAACTGGAGATCATGGACGGTAAATTTACCGGCAATGTGATCGGCGACATCGTAGACGCGCAGTACAA" \
-           "AGCGAAAACTCTGACTCGCCTCGCGCAGGAGTATGAAATCCCGCTGGCGCAGACCGTGGCGATTGGCGATG" \
-           "GAGCCAATGACCTGCCGATGATCAAAGCGGCAGGGCTGGGGATTGCCTACCATGCCAAGCCAAAAGTGAAT" \
-           "GAAAAGGCGGAAGTCACCATCCGTCACGCTGACCTGATGGGGGTATTCTGCATCCTCTCAGGCAGCCTGA" \
-           "ATCAGAAGTAATTGCTCGCCCGCCATCCTGCGGGCGGCACAGCATTAACGAGGTACACCGTGGCAAAAGCT" \
-           "CCAAAACGCGCCTTTGTTTGTAATGAATGCGGGGCCGATTATCCGCGCTGGCAGGGGC" \
-           "GTGCAGTGCCTGTCATGCCTGGAACACCATCACCGAGGTGCGTCTTGCTGCGTCGCCA" \
-           "ATGGTGGCGCGTAACGAGCGTCTCAGCGGCTATGCCGGTAGCGCCGGGGTGGCAAA" \
-           "AGTCCAGAAACTCTCCGATATCAGCCTTGAAGAGCTGCCGCGTTTTTCCA" \
-           "CCGGATTTAAAGAGTTCGACCGCGTACTAGGAACGCTGTGCAAACTGGCCCAGCA" \
-           "GATGAAAACGCTGTATGTCACCGGCGAAGAGTCGCTGCAACAGGTGGCAATGCGCGCTCATCGCCTTGGC" \
-           "CTGCCGACTGACAATCTCAATATGTTGTCGGAAACCAGCATCGAACAGATCTGCCTGATTGCCGAAGAAGAGCAACCG" \
-           "AAGCTGATGGTAATTGACTCGATCCAGGTGATGCATATGGCGGATGTACAGTCATCGCCTGG" \
-           "TAGCGTGGCGCAGGTGCGTGAAACGGCGGCTTATTTGACACGCTTCGCCAAAACGCGCGGTGTGGC"
-C = Occurrences1(3, sequence)
-print(sum(C.pn))
-A = Occurrences1(4, sequence)
-print(sum(A.pn))
-B = Occurrences1(5, sequence)
-print(sum(B.pn))
-
-
-
+#-------------------------------
+#-------------------------------
+#-------------------------------
+#-------------------------------ETUDE D UN BRIN D ADN
+# sequenceADN = "AAATCTGCCGCTGATGCCAGGCTTAACGCAACTGGTGCTCAAGCTGGAAACGCTGGGCTGGAAAGTGGCGA" \
+#            "TTGCCTCCGGCGGCTTTACTTTCTTTGCTGAATACCTGCGCGACAAGCTGCGCCTGACCGCCGTGGTAGCC" \
+#            "AATGAACTGGAGATCATGGACGGTAAATTTACCGGCAATGTGATCGGCGACATCGTAGACGCGCAGTACAA" \
+#            "AGCGAAAACTCTGACTCGCCTCGCGCAGGAGTATGAAATCCCGCTGGCGCAGACCGTGGCGATTGGCGATG" \
+#            "GAGCCAATGACCTGCCGATGATCAAAGCGGCAGGGCTGGGGATTGCCTACCATGCCAAGCCAAAAGTGAAT" \
+#            "GAAAAGGCGGAAGTCACCATCCGTCACGCTGACCTGATGGGGGTATTCTGCATCCTCTCAGGCAGCCTGA" \
+#            "ATCAGAAGTAATTGCTCGCCCGCCATCCTGCGGGCGGCACAGCATTAACGAGGTACACCGTGGCAAAAGCT" \
+#            "CCAAAACGCGCCTTTGTTTGTAATGAATGCGGGGCCGATTATCCGCGCTGGCAGGGGC" \
+#            "GTGCAGTGCCTGTCATGCCTGGAACACCATCACCGAGGTGCGTCTTGCTGCGTCGCCA" \
+#            "ATGGTGGCGCGTAACGAGCGTCTCAGCGGCTATGCCGGTAGCGCCGGGGTGGCAAA" \
+#            "AGTCCAGAAACTCTCCGATATCAGCCTTGAAGAGCTGCCGCGTTTTTCCA" \
+#            "CCGGATTTAAAGAGTTCGACCGCGTACTAGGAACGCTGTGCAAACTGGCCCAGCA" \
+#            "GATGAAAACGCTGTATGTCACCGGCGAAGAGTCGCTGCAACAGGTGGCAATGCGCGCTCATCGCCTTGGC" \
+#            "CTGCCGACTGACAATCTCAATATGTTGTCGGAAACCAGCATCGAACAGATCTGCCTGATTGCCGAAGAAGAGCAACCG" \
+#            "AAGCTGATGGTAATTGACTCGATCCAGGTGATGCATATGGCGGATGTACAGTCATCGCCTGG" \
+#            "TAGCGTGGCGCAGGTGCGTGAAACGGCGGCTTATTTGACACGCTTCGCCAAAACGCGCGGTGTGGC"
+#
+# a = Occurrences1(6, sequenceADN)
+# plt.hist(a.zn)
+# plt.show()
+#
