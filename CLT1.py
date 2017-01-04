@@ -3,6 +3,7 @@ import itertools
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats
+import pylab as P
 
 """This program allows to compute the p-value
 of different words in a NDA sequence in order to determine abnormally
@@ -27,13 +28,6 @@ def get_key(str):
         power *= 4
     return size, key
 
-def random_sequence(N):
-    sequence = ""
-    i = 0
-    while i<N:
-        sequence += E[np.random.randint(4)]
-        i += 1
-    return sequence
 
 class Occurrences:
     def __init__(self, length):
@@ -92,37 +86,34 @@ class Occurrences1(Occurrences):
             second_estimator = np.true_divide(self[word[:-1]]*self[word[-2]+word[-1]], self[word[-2]])
             if first_estimator != 0:
                 zeta = (first_estimator - second_estimator)/math.sqrt(self.sequence_length)
+
                 sigma = math.sqrt(np.true_divide(first_estimator, self.sequence_length)
                                   * (1 - (self[word[:-1]]/self[word[-2]]))
                                   * (1 - (second_estimator/self.sequence_length))
                                   )
-                print(sigma)
                 self.zn[key] = np.true_divide(zeta, sigma)
-
-
             else:
-                self.zn[key] = 0
+                self.zn[key] = np.nan
 
     def get_proba_method1(self):
         """Error may come from the fact that when must check wheter word has occurence ?
         + maybe approximation error"""
         cdf = scipy.stats.norm.cdf
         for i in range(4 ** self.length):
-            if self.zn[i] != 0:
+            if self.zn[i] != np.nan:
                 self.pn[i] = 1 - cdf(self.zn[i])
             else:
-                self.pn[i] = 0
+                self.pn[i] = np.nan
 
 
-sequence = random_sequence(7000)
-a = Occurrences1(5, sequence)
-# plt.hist(a.zn)
-# plt.show()
+sequence = random_sequence(8000)
+a = Occurrences1(4, sequence)
+b = a.zn[~np.isnan(a.zn)]
 
-"""Probleme au niveau de la norme de Zn, probleme de normalisation quelque part.
-Vraisembablement sigma"""
-
-
+hist = np.histogram(b, density=True)
+print(hist)
+plt.hist2d(hist[0], hist[1])
+plt.show()
 
 #-------------------------------
 #-------------------------------
