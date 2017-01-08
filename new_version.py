@@ -74,10 +74,11 @@ def variance_gaussian(word, seq_len=sequence_lenght, m_len=markov_length):
     # Computation of the independant term
     indep_cst = 0
     for d in range(0, sequence_lenght-m_len-1):
-        if word[d] == word[sequence_lenght-1]:
+        if word[0:d] == word[sequence_lenght-1-d:]:
             word_repeted = ''.join(word[:d]+word[:sequence_lenght])
             new_len = len(word_repeted)
             indep_cst += expectation_gaussian(word_repeted, new_len, m_len)
+            # TODO Probleme ici a resoudre car occurrences non adaptee a ces calculs
     variance += 2*indep_cst
 
     # Computation of the quadratic term
@@ -88,7 +89,7 @@ def variance_gaussian(word, seq_len=sequence_lenght, m_len=markov_length):
     word_occ = word_occ[0]
     word_vocab = word_vector.get_feature_names()
     word_vocab = np.array(word_vocab)
-    word_vocab = [word for word in word_vocab if len(word) != seq_len]
+    word_vocab = [word for word in word_vocab if len(word) in [m_len, m_len+1]]
     for subword in word_vocab:
         if len(subword) == m_len:
             apparitions = [int(word_occ[word_vocab == subword+k]) for k in alphabet if (subword+k in word_vocab)]
@@ -97,7 +98,7 @@ def variance_gaussian(word, seq_len=sequence_lenght, m_len=markov_length):
         elif len(subword) == m_len+1:
             quad_cst -= (int(word_occ[word_vocab == subword])**2)/int(occurrences[vocab == subword])
 
-    apparitions = [int(word_occ[word_vocab == word[0:m_len-1]+k]) for k in alphabet if (word[0:m_len-1]+k in word_vocab)]
+    apparitions = [int(word_occ[word_vocab == word[0:m_len]+k]) for k in alphabet if (word[0:m_len]+k in word_vocab)]
     num = sum(apparitions)
     quad_cst += (1 - 2*num)/int(occurrences[vocab == word])
     variance += (expect*expect)*quad_cst
@@ -134,3 +135,8 @@ def p_score_max(word):
 
 # # --- Script
 obs_words = [word for word in vocab if len(word) == sequence_lenght]
+p_scores = [(p_score_max(word), word) for word in obs_words]
+print(min(p_scores))
+
+# std1 = [variance_gaussian(word) for word in obs_words]
+# std2 = [variance_gaussian_max(word) for word in obs_words]
