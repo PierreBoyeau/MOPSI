@@ -1,84 +1,47 @@
 import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer
 import math
-import matplotlib.pyplot as plt
 
 
-"""Cette méthode est la version correspondante a 6.1 de Methodes Aleatoires"""
-# --- Constants
-alphabet = ['A', 'T', 'C', 'G']
-markov_length = 1 # Please do not modify value.
-sequence_lenght = 6
-
-assert(sequence_lenght >= markov_length-2)
-
-# --- DNA samples examples
-# sequence_test = ["ATTCGCTGATTTGCCTCCGGCGGCTTTACTTTCTTTGCTGAATACCTGCGCGACAAGCTGCGCCTGACCGCCGTGGTAGCCGCCAGGCTTAACGCAAC \
-#                   TGGTGCTCAAGCTGGAAACGCTGGGCTGGAAAGTGGCGAGAA"]
-#
-# sequenceADN = ["AAATCTGCCGCTGATGCCAGGCTTAACGCAACTGGTGCTCAAGCTGGAAACGCTGGGCTGGAAAGTGGCGA" \
-#            "TTGCCTCCGGCGGCTTTACTTTCTTTGCTGAATACCTGCGCGACAAGCTGCGCCTGACCGCCGTGGTAGCC" \
-#            "AATGAACTGGAGATCATGGACGGTAAATTTACCGGCAATGTGATCGGCGACATCGTAGACGCGCAGTACAA" \
-#            "AGCGAAAACTCTGACTCGCCTCGCGCAGGAGTATGAAATCCCGCTGGCGCAGACCGTGGCGATTGGCGATG" \
-#            "GAGCCAATGACCTGCCGATGATCAAAGCGGCAGGGCTGGGGATTGCCTACCATGCCAAGCCAAAAGTGAAT" \
-#            "GAAAAGGCGGAAGTCACCATCCGTCACGCTGACCTGATGGGGGTATTCTGCATCCTCTCAGGCAGCCTGA" \
-#            "ATCAGAAGTAATTGCTCGCCCGCCATCCTGCGGGCGGCACAGCATTAACGAGGTACACCGTGGCAAAAGCT" \
-#            "CCAAAACGCGCCTTTGTTTGTAATGAATGCGGGGCCGATTATCCGCGCTGGCAGGGGC" \
-#            "GTGCAGTGCCTGTCATGCCTGGAACACCATCACCGAGGTGCGTCTTGCTGCGTCGCCA" \
-#            "ATGGTGGCGCGTAACGAGCGTCTCAGCGGCTATGCCGGTAGCGCCGGGGTGGCAAA" \
-#            "AGTCCAGAAACTCTCCGATATCAGCCTTGAAGAGCTGCCGCGTTTTTCCA" \
-#            "CCGGATTTAAAGAGTTCGACCGCGTACTAGGAACGCTGTGCAAACTGGCCCAGCA" \
-#            "GATGAAAACGCTGTATGTCACCGGCGAAGAGTCGCTGCAACAGGTGGCAATGCGCGCTCATCGCCTTGGC" \
-#            "CTGCCGACTGACAATCTCAATATGTTGTCGGAAACCAGCATCGAACAGATCTGCCTGATTGCCGAAGAAGAGCAACCG" \
-#            "AAGCTGATGGTAATTGACTCGATCCAGGTGATGCATATGGCGGATGTACAGTCATCGCCTGG" \
-#            "TAGCGTGGCGCAGGTGCGTGAAACGGCGGCTTATTTGACACGCTTCGCCAAAACGCGCGGTGTGGC"]
-
-with open("D:\Pierre\Git\MOPSI\MOPSI\E_coli.txt", 'r') as f:
-    seq_complete = f.read().splitlines()
-seq_complete = ''.join(seq_complete)
-seq_complete = [seq_complete]
+"""Expectation and variance computed thanks to an approximation based on Ergodic Theorem."""
 
 
-# --- Building occurrences table
-def make_chunks(s):
-    return [s[i:i+width] for width in {1, 2, sequence_lenght-1, sequence_lenght}
-            for i in range(len(s)-width+1)]
+class Counter_simple:
+    """Class used to determine the rarity of a given subsequence in a DNA sequence.
+        Model used: Markov chains"""
+    def __init__(self, sequence_lenght):
+        self.occurrences = None
+        self.vocab = None
+        self.seq_len = sequence_lenght
+
+    def make_chunks(self, s):
+        return [s[i:i + width] for width in {1, 2, self.seq_len - 1, self.seq_len}
+                for i in range(len(s) - width + 1)]
+
+    def learn(self, sequence):
+        vectorizer = CountVectorizer(tokenizer=self.make_chunks, lowercase=False)
+        self.occurrences = vectorizer.fit_transform(sequence)
+        self.occurrences = self.occurrences.toarray()
+        self.occurrences = self.occurrences[0]
+        self.vocab = vectorizer.get_feature_names()
+        self.vocab = np.array(self.vocab)
+
+    def occ(self, word):
+        return int(self.occurrences[self.vocab == word])
+
+    def expectation(self, word):
+        """Estimator computed thanks to the Ergodic Theorem"""
+        return self.occ(word[:-1])*self.occ(word[-2:]) / self.occ(word[-2])
+
+    def variance(self, word):
+        """Estimation of variance of expected occurences for given word"""
+        frac = self.occ(word)
+        term1 = 1 - self.occ(word[:-1])/self.occ(word[-2])
+        term2 = 1 - self.occ(word[-2:])/self.occ(word[-2])
+        return frac * term1 * term2
+
+    def p_score(self, word):
+        return (self.occ(word) - self.expectation(word)) / math.sqrt(self.variance(word))
 
 
-vectorizer = CountVectorizer(tokenizer=make_chunks, lowercase=False)
-occurrences = vectorizer.fit_transform(seq_complete)
-occurrences = occurrences.toarray()
-occurrences = occurrences[0]
-vocab = vectorizer.get_feature_names()
-vocab = np.array(vocab)
-
-# ---
-# ---Useful functions
-
-
-def occ(word):
-    return int(occurrences[vocab == word])
-
-
-# Attention par rapport a l'ouvrage Modeles aleatoires on fait tout de suite la simplification par sqrt(N)
-def expectation(word):
-    """Estimator computed thanks to the Ergodic Theorem"""
-    return occ(word[:-1])*occ(word[-2:]) / occ(word[-2])
-
-
-def variance(word):
-    """Estimation of variance of expected occurences for given word"""
-    frac = occ(word)
-    term1 = 1 - occ(word[:-1])/occ(word[-2])
-    term2 = 1 - occ(word[-2:])/occ(word[-2])
-    return frac * term1 * term2
-
-
-def p_score(word):
-    return (occ(word) - expectation(word)) / math.sqrt(variance(word))
-
-
-# --- Script
-obs_words = [word for word in vocab if len(word) == sequence_lenght]
-p_scores = [(p_score(word), word) for word in obs_words]
-print(min(p_scores))
+# --- Examples (see Count_m)
